@@ -4,8 +4,6 @@ export default function InterviewTracker() {
   const [companies, setCompanies] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [newCompany, setNewCompany] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
 
   // Load from localStorage
   useEffect(() => {

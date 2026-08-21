@@ -126,7 +126,6 @@ export default function JobTracker() {
   const [statusMap,   setStatusMap]   = useState({});
   const [loading,     setLoading]     = useState(false);
   const [autoFetching, setAutoFetching] = useState(false); // NEW: Track auto-fetch
-  const [error,       setError]       = useState("");
   const [lastFetched, setLastFetched] = useState("");
   const [filter,      setFilter]      = useState("all");
   const [search,      setSearch]      = useState("");
@@ -166,7 +165,6 @@ export default function JobTracker() {
     } else {
       setAutoFetching(true); // NEW: Show auto-fetch indicator
     }
-    setError("");
     const all = [];
 
     for (const query of SEARCHES) {
@@ -180,9 +178,8 @@ export default function JobTracker() {
         );
         const data = await res.json();
         if (data.data) all.push(...data.data);
-        else if (data.message) setError(data.message);
       } catch (e) {
-        setError("Network error — check your API key or internet connection.");
+        // Error handling silently for auto-fetch
       }
     }
 
