@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { db } from './firebase';
+import { ref, set, onValue, remove } from 'firebase/database';
 
 // ══════════════════════════════════════════════
 // CONFIG — searches tailored to your resume
@@ -134,8 +136,11 @@ export default function JobTracker() {
   const [notes,       setNotes]       = useState({});
   const [editNote,    setEditNote]    = useState(null);
 
-  // Load from localStorage
+    // ══════════════════════════════════════════════
+  // LOAD FROM FIREBASE & LOCALSTORAGE
+  // ══════════════════════════════════════════════
   useEffect(() => {
+    // First load from localStorage (instant)
     const key  = localStorage.getItem("jt_apikey");
     const jbs  = localStorage.getItem("jt_jobs");
     const stm  = localStorage.getItem("jt_status");
@@ -146,14 +151,67 @@ export default function JobTracker() {
     if (stm) setStatusMap(JSON.parse(stm));
     if (lf)  setLastFetched(lf);
     if (nts) setNotes(JSON.parse(nts));
+    
+    // Then sync from Firebase (real-time)
+    const jobsRef = ref(db, 'jobs');
+    onValue(jobsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const jobList = Object.values(data);
+        setJobs(jobList);
+        localStorage.setItem("jt_jobs", JSON.stringify(jobList));
+      }
+    });
+    
+    const statusRef = ref(db, 'jobStatus');
+    onValue(statusRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setStatusMap(data);
+        localStorage.setItem("jt_status", JSON.stringify(data));
+      }
+    });
+    
+    const notesRef = ref(db, 'jobNotes');
+    onValue(notesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setNotes(data);
+        localStorage.setItem("jt_notes", JSON.stringify(data));
+      }
+    });
+    
     setLoaded(true);
   }, []);
 
-  // Auto-save
-  useEffect(() => { if (loaded) localStorage.setItem("jt_jobs",      JSON.stringify(jobs));      }, [jobs,      loaded]);
-  useEffect(() => { if (loaded) localStorage.setItem("jt_status",    JSON.stringify(statusMap)); }, [statusMap, loaded]);
-  useEffect(() => { if (loaded) localStorage.setItem("jt_notes",     JSON.stringify(notes));     }, [notes,     loaded]);
-
+  // ══════════════════════════════════════════════
+  // AUTO-SAVE TO FIREBASE
+  // ══════════════════════════════════════════════
+  useEffect(() => {
+    if (loaded && jobs.length > 0) {
+      const jobsObj = {};
+      jobs.forEach((j, idx) => {
+        jobsObj[idx] = j;
+      });
+      set(ref(db, 'jobs'), jobsObj);
+      localStorage.setItem("jt_jobs", JSON.stringify(jobs));
+    }
+  }, [jobs, loaded]);
+  
+  useEffect(() => {
+    if (loaded && Object.keys(statusMap).length > 0) {
+      set(ref(db, 'jobStatus'), statusMap);
+      localStorage.setItem("jt_status", JSON.stringify(statusMap));
+    }
+  }, [statusMap, loaded]);
+  
+  useEffect(() => {
+    if (loaded && Object.keys(notes).length > 0) {
+      set(ref(db, 'jobNotes'), notes);
+      localStorage.setItem("jt_notes", JSON.stringify(notes));
+    }
+  }, [notes, loaded]);
+  
   const saveKey = (k) => {
     localStorage.setItem("jt_apikey", k);
     setApiKey(k);
