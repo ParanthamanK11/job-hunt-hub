@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { db } from './firebase';
-import { ref, set, onValue, remove } from 'firebase/database';
+import { ref, set, onValue } from 'firebase/database';
 
 // ══════════════════════════════════════════════
 // CONFIG — searches tailored to your resume
@@ -211,7 +211,7 @@ export default function JobTracker() {
       localStorage.setItem("jt_notes", JSON.stringify(notes));
     }
   }, [notes, loaded]);
-  
+
   const saveKey = (k) => {
     localStorage.setItem("jt_apikey", k);
     setApiKey(k);
